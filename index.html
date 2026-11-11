@@ -166,6 +166,7 @@ pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px sol
         </select>
         <button type="button" class="primary" id="find-all">Find links</button>
         <button type="button" id="clear-examples" hidden>Remove examples</button>
+        <button type="button" id="clear-all">Clear list</button>
       </div>
     </div>
     <p class="banner" id="key-banner" hidden>Automatic search is off because no YouTube API key is set in this page. You can still use “Search YouTube” and paste links yourself.</p>
@@ -386,6 +387,7 @@ var YT_API_KEY = 'AIzaSyC-uCe1dg_NSCBlutlAiscJV0Cwz4h2JCw';
     document.getElementById('counts').innerHTML =
       '<span><b>' + n.needs + '</b> need a link</span><span><b>' + n.check + '</b> to check</span><span><b>' + n.linked + '</b> ready</span>';
     document.getElementById('clear-examples').hidden = !songs.some(function (s) { return s.example; });
+    document.getElementById('clear-all').hidden = !songs.length;
     findAllBtn.disabled = busy || !HAS_KEY || n.needs === 0;
     document.getElementById('export').textContent = csv() || 'Linked songs will appear here.';
   }
@@ -453,6 +455,25 @@ var YT_API_KEY = 'AIzaSyC-uCe1dg_NSCBlutlAiscJV0Cwz4h2JCw';
     box.value = ''; save(); render();
     toast(added ? 'Added ' + added + (added === 1 ? ' song' : ' songs') + (HAS_KEY ? '. Click “Find links” to search.' : '') : 'No new songs to add');
   });
+  // Clear list asks for a second click within 4 seconds so one stray click can't wipe everything.
+  var clearBtn = document.getElementById('clear-all'), clearTimer = null;
+  clearBtn.addEventListener('click', function () {
+    if (busy) return;
+    if (!clearTimer) {
+      clearBtn.textContent = 'Click again to clear all ' + songs.length;
+      clearBtn.style.borderColor = 'var(--err)'; clearBtn.style.color = 'var(--err)';
+      clearTimer = setTimeout(resetClear, 4000);
+      return;
+    }
+    resetClear();
+    songs = []; save(); render();
+    toast('List cleared');
+  });
+  function resetClear() {
+    clearTimeout(clearTimer); clearTimer = null;
+    clearBtn.textContent = 'Clear list'; clearBtn.style.borderColor = ''; clearBtn.style.color = '';
+  }
+
   document.getElementById('clear-examples').addEventListener('click', function () {
     songs = songs.filter(function (s) { return !s.example; }); save(); render();
   });

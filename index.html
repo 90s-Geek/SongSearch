@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Find YouTube reference videos for worship songs and track which links have been added to Tithely.">
+<title>Worship Song Link Finder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working column — add songs on top, a song-by-song worklist below, export at the end */
+:root {
+  --bg: #f5f7f9;
+  --surface: #ffffff;
+  --ink: #16212b;
+  --muted: #5b6875;
+  --line: #d9e0e6;
+  --accent: #0f6e6a;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2f1ef;
+  --warn: #9a5b00;
+  --warn-soft: #fbf0dc;
+  --ok: #1f7a3f;
+  --ok-soft: #e1f3e6;
+  --err: #b42318;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11171c; --surface: #182128; --ink: #e6edf2; --muted: #9aa8b4; --line: #2a3640;
+    --accent: #4fc3b9; --accent-ink: #0b1a19; --accent-soft: #173431;
+    --warn: #f0b45a; --warn-soft: #3a2c15; --ok: #6fd28f; --ok-soft: #173322; --err: #ff8a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11171c; --surface: #182128; --ink: #e6edf2; --muted: #9aa8b4; --line: #2a3640;
+  --accent: #4fc3b9; --accent-ink: #0b1a19; --accent-soft: #173431;
+  --warn: #f0b45a; --warn-soft: #3a2c15; --ok: #6fd28f; --ok-soft: #173322; --err: #ff8a80;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { color-scheme: light; }
+body {
+  margin: 0;
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 920px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(1.7rem, 4vw, 2.3rem); font-weight: 800; }
+h2 { font-size: 1.1rem; font-weight: 600; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 62ch; margin-top: 8px; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 600; }
+.steps { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 14px; color: var(--muted); font-size: 14px; }
+.steps span b { color: var(--ink); font-weight: 600; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+label { font-size: 13px; font-weight: 600; color: var(--muted); }
+textarea, input[type="text"], input[type="url"], select {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 9px 11px; width: 100%; min-width: 0;
+}
+textarea { min-height: 96px; resize: vertical; font-family: var(--font-mono); font-size: 13.5px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.hint { font-size: 13px; color: var(--muted); }
+
+button, .btn {
+  font: inherit; font-size: 14px; font-weight: 600; border-radius: 7px; padding: 8px 14px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+button:hover, .btn:hover { border-color: var(--accent); }
+.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.ghost { background: transparent; border-color: transparent; color: var(--muted); padding-inline: 8px; }
+.ghost:hover { color: var(--err); border-color: transparent; }
+
+.toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: end; }
+.counts { display: flex; gap: 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.counts b { color: var(--ink); }
+
+.list { display: flex; flex-direction: column; gap: 10px; }
+.song { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; }
+.song[data-status="linked"] { border-left-color: var(--accent); }
+.song[data-status="added"] { border-left-color: var(--ok); }
+.song .meta { min-width: 0; }
+.song .title { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
+.song .artist { color: var(--muted); font-size: 14px; }
+.tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
+.chip { justify-self: end; align-self: start; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; background: var(--warn-soft); color: var(--warn); }
+.song[data-status="linked"] .chip { background: var(--accent-soft); color: var(--accent); }
+.song[data-status="added"] .chip { background: var(--ok-soft); color: var(--ok); }
+.song .work { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.song .work input { flex: 1 1 260px; font-family: var(--font-mono); font-size: 13px; }
+.msg { grid-column: 1 / -1; font-size: 13px; }
+.msg.bad { color: var(--err); }
+.msg.good { color: var(--muted); font-family: var(--font-mono); overflow-wrap: anywhere; }
+.added-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 500; cursor: pointer; }
+.empty { text-align: center; color: var(--muted); padding: 28px; border: 1px dashed var(--line); border-radius: 10px; }
+
+pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 12px; font-family: var(--font-mono); font-size: 12.5px; max-height: 240px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 7px; font-size: 14px; }
+@media (max-width: 520px) { .song { grid-template-columns: 1fr; } .chip { justify-self: start; } }
+@media (prefers-reduced-motion: no-preference) { .song { transition: border-color .2s; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Worship team prep</p>
+    <h1>Song Link Finder</h1>
+    <p class="lede">Find the right YouTube reference for each song in your library, check the link, and copy it into the song's entry in Tithely so the team can listen before rehearsal.</p>
+    <div class="steps">
+      <span><b>1.</b> Add songs</span>
+      <span><b>2.</b> Search YouTube</span>
+      <span><b>3.</b> Paste the video link</span>
+      <span><b>4.</b> Copy into Tithely</span>
+    </div>
+  </header>
+
+  <section class="panel" aria-labelledby="add-h">
+    <h2 id="add-h">Add songs</h2>
+    <label for="bulk">One song per line, as <span style="font-family:var(--font-mono)">Title - Artist</span></label>
+    <textarea id="bulk" placeholder="Firm Foundation (He Won't) - Maverick City Music&#10;Graves Into Gardens - Elevation Worship"></textarea>
+    <div class="row">
+      <button class="primary" id="add-btn" type="button">Add to list</button>
+      <span class="hint">Lines without a dash are added with no artist.</span>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:14px" aria-labelledby="list-h">
+    <div class="toolbar">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <h2 id="list-h">Your songs</h2>
+        <div class="counts" id="counts"></div>
+      </div>
+      <div class="row">
+        <label for="pref" style="font-weight:500">Search for</label>
+        <select id="pref" style="width:auto">
+          <option value="official audio">Official audio</option>
+          <option value="lyric video">Lyric video</option>
+          <option value="live">Live version</option>
+          <option value="">Anything</option>
+        </select>
+        <button type="button" id="clear-examples" hidden>Remove examples</button>
+      </div>
+    </div>
+    <div class="list" id="list"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="exp-h">
+    <h2 id="exp-h">Export</h2>
+    <p class="hint">Copy every linked song as a list you can paste into a spreadsheet or keep as a record of what's been added.</p>
+    <pre class="export" id="export"></pre>
+    <div class="row">
+      <button type="button" id="copy-csv">Copy as CSV</button>
+      <button type="button" id="copy-plain">Copy as plain list</button>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(function () {
+  var KEY = 'song-link-finder-v1';
+  var EXAMPLES = [
+    { title: 'Goodness of God', artist: 'Bethel Music', url: '', added: false, example: true },
+    { title: 'Build My Life', artist: 'Housefires', url: '', added: false, example: true },
+    { title: 'Way Maker', artist: 'Leeland', url: '', added: false, example: true }
+  ];
+  var songs;
+  try { songs = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { songs = null; }
+  if (!Array.isArray(songs)) songs = EXAMPLES.map(function (s) { return Object.assign({ id: uid() }, s); });
+  songs.forEach(function (s) { if (!s.id) s.id = uid(); });
+
+  var listEl = document.getElementById('list');
+  var prefEl = document.getElementById('pref');
+  try { var p = localStorage.getItem(KEY + '-pref'); if (p !== null) prefEl.value = p; } catch (e) {}
+
+  function uid() { return Math.random().toString(36).slice(2, 10); }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(songs)); } catch (e) {} }
+
+  // Accepts watch, youtu.be, shorts, live, embed and music.youtube.com links; returns the 11-character video ID.
+  function videoId(raw) {
+    var s = (raw || '').trim();
+    if (!s) return null;
+    if (/^[\w-]{11}$/.test(s)) return s;
+    try {
+      var u = new URL(/^https?:\/\//i.test(s) ? s : 'https://' + s);
+      var host = u.hostname.replace(/^www\.|^m\./, '');
+      if (host === 'youtu.be') return match(u.pathname.slice(1));
+      if (host === 'youtube.com' || host === 'music.youtube.com' || host === 'youtube-nocookie.com') {
+        if (u.searchParams.get('v')) return match(u.searchParams.get('v'));
+        var m = u.pathname.match(/^\/(shorts|live|embed|v)\/([\w-]{11})/);
+        if (m) return m[2];
+      }
+    } catch (e) {}
+    return null;
+    function match(x) { return /^[\w-]{11}$/.test(x) ? x : null; }
+  }
+  function canonical(id) { return 'https://www.youtube.com/watch?v=' + id; }
+  function searchUrl(s) {
+    var q = [s.title, s.artist, prefEl.value].filter(Boolean).join(' ');
+    return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
+  }
+  function status(s) { return s.added ? 'added' : (s.url ? 'linked' : 'needs'); }
+  var LABEL = { needs: 'Needs link', linked: 'Ready for Tithely', added: 'Added to Tithely' };
+
+  function render() {
+    listEl.textContent = '';
+    if (!songs.length) {
+      var e = document.createElement('div'); e.className = 'empty';
+      e.textContent = 'No songs yet. Add your song list above to start finding links.';
+      listEl.appendChild(e);
+    }
+    songs.forEach(function (s) {
+      var st = status(s);
+      var card = document.createElement('article'); card.className = 'song'; card.dataset.status = st;
+
+      var meta = document.createElement('div'); meta.className = 'meta';
+      var t = document.createElement('div'); t.className = 'title'; t.textContent = s.title;
+      if (s.example) { var tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = 'Example'; t.appendChild(tg); }
+      var a = document.createElement('div'); a.className = 'artist'; a.textContent = s.artist || 'No artist given';
+      meta.append(t, a);
+
+      var chip = document.createElement('span'); chip.className = 'chip'; chip.textContent = LABEL[st];
+
+      var work = document.createElement('div'); work.className = 'work';
+      var search = document.createElement('a'); search.className = 'btn'; search.href = searchUrl(s); search.target = '_blank'; search.rel = 'noopener';
+      search.textContent = 'Search YouTube ↗';
+      var input = document.createElement('input'); input.type = 'url'; input.id = 'url-' + s.id;
+      input.placeholder = 'Paste the video link here'; input.value = s.url || '';
+      input.setAttribute('aria-label', 'YouTube link for ' + s.title);
+      var copy = document.createElement('button'); copy.type = 'button'; copy.textContent = 'Copy link'; copy.disabled = !s.url;
+      var addedLbl = document.createElement('label'); addedLbl.className = 'added-toggle';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'added-' + s.id; cb.checked = !!s.added; cb.disabled = !s.url;
+      addedLbl.append(cb, document.createTextNode('Added in Tithely'));
+      var del = document.createElement('button'); del.type = 'button'; del.className = 'ghost'; del.textContent = 'Remove';
+      del.setAttribute('aria-label', 'Remove ' + s.title);
+      work.append(search, input, copy, addedLbl, del);
+
+      var msg = document.createElement('div'); msg.className = 'msg';
+      if (s.url) { msg.classList.add('good'); msg.textContent = s.url; } else msg.hidden = true;
+
+      input.addEventListener('change', function () {
+        var v = input.value.trim();
+        if (!v) { s.url = ''; s.added = false; save(); render(); return; }
+        var id = videoId(v);
+        if (!id) {
+          msg.hidden = false; msg.className = 'msg bad';
+          msg.textContent = "That doesn't look like a YouTube video link. Copy the address of the video page (it contains watch?v= or youtu.be/).";
+          return;
+        }
+        s.url = canonical(id); save(); render();
+        toast('Link saved for ' + s.title);
+      });
+      copy.addEventListener('click', function () { copyText(s.url, 'Link copied. Paste it into the song in Tithely.'); });
+      cb.addEventListener('change', function () { s.added = cb.checked; save(); render(); });
+      del.addEventListener('click', function () { songs = songs.filter(function (x) { return x !== s; }); save(); render(); });
+
+      card.append(meta, chip, work, msg);
+      listEl.appendChild(card);
+    });
+
+    var n = { needs: 0, linked: 0, added: 0 };
+    songs.forEach(function (s) { n[status(s)]++; });
+    document.getElementById('counts').innerHTML =
+      '<span><b>' + n.needs + '</b> need a link</span><span><b>' + n.linked + '</b> ready</span><span><b>' + n.added + '</b> added</span>';
+    document.getElementById('clear-examples').hidden = !songs.some(function (s) { return s.example; });
+    document.getElementById('export').textContent = csv() || 'Linked songs will appear here.';
+  }
+
+  function linked() { return songs.filter(function (s) { return s.url; }); }
+  function q(v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }
+  function csv() {
+    var rows = linked();
+    if (!rows.length) return '';
+    return ['Title,Artist,YouTube Link,Added to Tithely'].concat(rows.map(function (s) {
+      return [q(s.title), q(s.artist), s.url, s.added ? 'Yes' : 'No'].join(',');
+    })).join('\n');
+  }
+  function plain() { return linked().map(function (s) { return s.title + (s.artist ? ' (' + s.artist + ')' : '') + ': ' + s.url; }).join('\n'); }
+
+  var toastTimer;
+  function toast(text) {
+    var el = document.getElementById('toast'); el.textContent = text; el.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.hidden = true; }, 2600);
+  }
+  function copyText(text, ok) {
+    if (!text) { toast('Nothing to copy yet. Add a link first.'); return; }
+    var p = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject();
+    p.then(function () { toast(ok); }, function () {
+      var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+      var done = false; try { done = document.execCommand('copy'); } catch (e) {}
+      ta.remove(); toast(done ? ok : 'Copy was blocked. Select the text and copy it manually.');
+    });
+  }
+
+  document.getElementById('add-btn').addEventListener('click', function () {
+    var box = document.getElementById('bulk');
+    var added = 0;
+    box.value.split('\n').forEach(function (line) {
+      line = line.trim(); if (!line) return;
+      var parts = line.split(/\s+[-–—]\s+/);
+      var title = parts.shift().trim(), artist = parts.join(' - ').trim();
+      if (songs.some(function (s) { return s.title.toLowerCase() === title.toLowerCase() && (s.artist || '').toLowerCase() === artist.toLowerCase(); })) return;
+      songs.push({ id: uid(), title: title, artist: artist, url: '', added: false });
+      added++;
+    });
+    box.value = ''; save(); render();
+    toast(added ? 'Added ' + added + (added === 1 ? ' song' : ' songs') : 'No new songs to add');
+  });
+  document.getElementById('clear-examples').addEventListener('click', function () {
+    songs = songs.filter(function (s) { return !s.example; }); save(); render();
+  });
+  prefEl.addEventListener('change', function () { try { localStorage.setItem(KEY + '-pref', prefEl.value); } catch (e) {} render(); });
+  document.getElementById('copy-csv').addEventListener('click', function () { copyText(csv(), 'CSV copied'); });
+  document.getElementById('copy-plain').addEventListener('click', function () { copyText(plain(), 'List copied'); });
+
+  render();
+})();
+</script>
+</body>
+</html>

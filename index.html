@@ -20,6 +20,8 @@
   --accent-soft: #e2f1ef;
   --warn: #9a5b00;
   --warn-soft: #fbf0dc;
+  --check: #5a4bb0;
+  --check-soft: #ebe8f8;
   --ok: #1f7a3f;
   --ok-soft: #e1f3e6;
   --err: #b42318;
@@ -31,14 +33,16 @@
   :root:not([data-theme="light"]) {
     --bg: #11171c; --surface: #182128; --ink: #e6edf2; --muted: #9aa8b4; --line: #2a3640;
     --accent: #4fc3b9; --accent-ink: #0b1a19; --accent-soft: #173431;
-    --warn: #f0b45a; --warn-soft: #3a2c15; --ok: #6fd28f; --ok-soft: #173322; --err: #ff8a80;
+    --warn: #f0b45a; --warn-soft: #3a2c15; --check: #b4a8ff; --check-soft: #26213f;
+    --ok: #6fd28f; --ok-soft: #173322; --err: #ff8a80;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #11171c; --surface: #182128; --ink: #e6edf2; --muted: #9aa8b4; --line: #2a3640;
   --accent: #4fc3b9; --accent-ink: #0b1a19; --accent-soft: #173431;
-  --warn: #f0b45a; --warn-soft: #3a2c15; --ok: #6fd28f; --ok-soft: #173322; --err: #ff8a80;
+  --warn: #f0b45a; --warn-soft: #3a2c15; --check: #b4a8ff; --check-soft: #26213f;
+  --ok: #6fd28f; --ok-soft: #173322; --err: #ff8a80;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -75,36 +79,45 @@ button, .btn {
   font: inherit; font-size: 14px; font-weight: 600; border-radius: 7px; padding: 8px 14px; cursor: pointer;
   border: 1px solid var(--line); background: var(--surface); color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
 }
-button:hover, .btn:hover { border-color: var(--accent); }
+button:hover:not(:disabled), .btn:hover { border-color: var(--accent); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
 .primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .ghost { background: transparent; border-color: transparent; color: var(--muted); padding-inline: 8px; }
-.ghost:hover { color: var(--err); border-color: transparent; }
+.ghost:hover:not(:disabled) { color: var(--err); border-color: transparent; }
 
 .toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: end; }
-.counts { display: flex; gap: 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.counts { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .counts b { color: var(--ink); }
+.progress { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.banner { font-size: 13.5px; border-radius: 8px; padding: 10px 12px; background: var(--warn-soft); color: var(--warn); }
 
 .list { display: flex; flex-direction: column; gap: 10px; }
 .song { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; }
+.song[data-status="check"] { border-left-color: var(--check); }
 .song[data-status="linked"] { border-left-color: var(--accent); }
 .song[data-status="added"] { border-left-color: var(--ok); }
 .song .meta { min-width: 0; }
 .song .title { font-weight: 600; font-size: 16px; overflow-wrap: anywhere; }
 .song .artist { color: var(--muted); font-size: 14px; }
 .tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: 2px; }
-.chip { justify-self: end; align-self: start; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; background: var(--warn-soft); color: var(--warn); }
+.chip { justify-self: end; align-self: start; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; background: var(--warn-soft); color: var(--warn); white-space: nowrap; }
+.song[data-status="check"] .chip { background: var(--check-soft); color: var(--check); }
 .song[data-status="linked"] .chip { background: var(--accent-soft); color: var(--accent); }
 .song[data-status="added"] .chip { background: var(--ok-soft); color: var(--ok); }
 .song .work { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .song .work input { flex: 1 1 260px; font-family: var(--font-mono); font-size: 13px; }
+.match { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; font-size: 13.5px; }
+.match .vt { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.match .vc { color: var(--muted); }
+.match a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.match a:hover { text-decoration: underline; }
 .msg { grid-column: 1 / -1; font-size: 13px; }
 .msg.bad { color: var(--err); }
-.msg.good { color: var(--muted); font-family: var(--font-mono); overflow-wrap: anywhere; }
 .added-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 500; cursor: pointer; }
 .empty { text-align: center; color: var(--muted); padding: 28px; border: 1px dashed var(--line); border-radius: 10px; }
 
 pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 12px; font-family: var(--font-mono); font-size: 12.5px; max-height: 240px; }
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 7px; font-size: 14px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 7px; font-size: 14px; max-width: calc(100% - 32px); }
 @media (max-width: 520px) { .song { grid-template-columns: 1fr; } .chip { justify-self: start; } }
 @media (prefers-reduced-motion: no-preference) { .song { transition: border-color .2s; } }
 </style>
@@ -115,11 +128,11 @@ pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px sol
   <header>
     <p class="eyebrow">Worship team prep</p>
     <h1>Song Link Finder</h1>
-    <p class="lede">Find the right YouTube reference for each song in your library, check the link, and copy it into the song's entry in Tithely so the team can listen before rehearsal.</p>
+    <p class="lede">Find a YouTube reference video for each song in your library, check the match, and copy the link into the song's entry in Tithely so the team can listen before rehearsal.</p>
     <div class="steps">
       <span><b>1.</b> Add songs</span>
-      <span><b>2.</b> Search YouTube</span>
-      <span><b>3.</b> Paste the video link</span>
+      <span><b>2.</b> Find links</span>
+      <span><b>3.</b> Check each match</span>
       <span><b>4.</b> Copy into Tithely</span>
     </div>
   </header>
@@ -148,9 +161,12 @@ pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px sol
           <option value="live">Live version</option>
           <option value="">Anything</option>
         </select>
+        <button type="button" class="primary" id="find-all">Find links</button>
         <button type="button" id="clear-examples" hidden>Remove examples</button>
       </div>
     </div>
+    <p class="banner" id="key-banner" hidden>Automatic search is off because no YouTube API key is set in this page. You can still use “Search YouTube” and paste links yourself.</p>
+    <p class="progress" id="progress" hidden role="status"></p>
     <div class="list" id="list"></div>
   </section>
 
@@ -167,22 +183,33 @@ pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px sol
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script>
+// YouTube Data API key. In Google Cloud, restrict it to:
+//   Application restrictions → Websites → https://songs.90sgeek.org/*
+//   API restrictions → YouTube Data API v3 only
+var YT_API_KEY = 'AIzaSyC-uCe1dg_NSCBlutlAiscJV0Cwz4h2JCw';
+
 (function () {
   var KEY = 'song-link-finder-v1';
+  var HAS_KEY = YT_API_KEY && YT_API_KEY.indexOf('PASTE_') !== 0;
   var EXAMPLES = [
-    { title: 'Goodness of God', artist: 'Bethel Music', url: '', added: false, example: true },
-    { title: 'Build My Life', artist: 'Housefires', url: '', added: false, example: true },
-    { title: 'Way Maker', artist: 'Leeland', url: '', added: false, example: true }
+    { title: 'Goodness of God', artist: 'Bethel Music', example: true },
+    { title: 'Build My Life', artist: 'Housefires', example: true },
+    { title: 'Way Maker', artist: 'Leeland', example: true }
   ];
   var songs;
   try { songs = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { songs = null; }
-  if (!Array.isArray(songs)) songs = EXAMPLES.map(function (s) { return Object.assign({ id: uid() }, s); });
-  songs.forEach(function (s) { if (!s.id) s.id = uid(); });
+  if (!Array.isArray(songs)) songs = EXAMPLES.map(function (s) { return blank(s); });
+  songs = songs.map(function (s) { return Object.assign(blank({}), s, { id: s.id || uid() }); });
 
   var listEl = document.getElementById('list');
   var prefEl = document.getElementById('pref');
+  var findAllBtn = document.getElementById('find-all');
+  var progressEl = document.getElementById('progress');
+  var busy = false;
   try { var p = localStorage.getItem(KEY + '-pref'); if (p !== null) prefEl.value = p; } catch (e) {}
+  document.getElementById('key-banner').hidden = HAS_KEY;
 
+  function blank(s) { return Object.assign({ id: uid(), title: '', artist: '', url: '', videoTitle: '', channel: '', auto: false, added: false }, s); }
   function uid() { return Math.random().toString(36).slice(2, 10); }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(songs)); } catch (e) {} }
 
@@ -194,23 +221,75 @@ pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px sol
     try {
       var u = new URL(/^https?:\/\//i.test(s) ? s : 'https://' + s);
       var host = u.hostname.replace(/^www\.|^m\./, '');
-      if (host === 'youtu.be') return match(u.pathname.slice(1));
+      if (host === 'youtu.be') return ok(u.pathname.slice(1));
       if (host === 'youtube.com' || host === 'music.youtube.com' || host === 'youtube-nocookie.com') {
-        if (u.searchParams.get('v')) return match(u.searchParams.get('v'));
+        if (u.searchParams.get('v')) return ok(u.searchParams.get('v'));
         var m = u.pathname.match(/^\/(shorts|live|embed|v)\/([\w-]{11})/);
         if (m) return m[2];
       }
     } catch (e) {}
     return null;
-    function match(x) { return /^[\w-]{11}$/.test(x) ? x : null; }
+    function ok(x) { return /^[\w-]{11}$/.test(x) ? x : null; }
   }
   function canonical(id) { return 'https://www.youtube.com/watch?v=' + id; }
-  function searchUrl(s) {
-    var q = [s.title, s.artist, prefEl.value].filter(Boolean).join(' ');
-    return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
+  function query(s) { return [s.title, s.artist, prefEl.value].filter(Boolean).join(' '); }
+  function searchUrl(s) { return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query(s)); }
+  function decode(t) { var d = document.createElement('textarea'); d.innerHTML = t || ''; return d.value; }
+
+  // ---------- YouTube Data API ----------
+  function api(path, params) {
+    params.key = YT_API_KEY;
+    var qs = Object.keys(params).map(function (k) { return k + '=' + encodeURIComponent(params[k]); }).join('&');
+    return fetch('https://www.googleapis.com/youtube/v3/' + path + '?' + qs).then(function (r) {
+      return r.json().then(function (body) {
+        if (!r.ok) {
+          var reason = body && body.error && body.error.errors && body.error.errors[0] && body.error.errors[0].reason;
+          var err = new Error(reason || 'http_' + r.status); err.reason = reason || ''; throw err;
+        }
+        return body;
+      });
+    });
   }
-  function status(s) { return s.added ? 'added' : (s.url ? 'linked' : 'needs'); }
-  var LABEL = { needs: 'Needs link', linked: 'Ready for Tithely', added: 'Added to Tithely' };
+  function explain(err) {
+    var r = err.reason || '';
+    if (/quota|rateLimit/i.test(r)) return 'The daily YouTube search limit has been reached. Try again tomorrow, or paste links by hand.';
+    if (/keyInvalid|badRequest/i.test(r)) return 'The YouTube API key in this page is not valid. Check the key in index.html.';
+    if (/forbidden|Blocked|referer|accessNotConfigured/i.test(r)) return 'YouTube refused the request. Check that the key allows this website and that YouTube Data API v3 is enabled.';
+    return 'Could not reach YouTube. Check your connection and try again.';
+  }
+  function findOne(s) {
+    return api('search', { part: 'snippet', type: 'video', maxResults: 1, q: query(s) }).then(function (body) {
+      var item = body.items && body.items[0];
+      if (!item || !item.id || !item.id.videoId) { s.notFound = true; return; }
+      s.notFound = false;
+      s.url = canonical(item.id.videoId);
+      s.videoTitle = decode(item.snippet.title);
+      s.channel = decode(item.snippet.channelTitle);
+      s.auto = true; s.added = false;
+    });
+  }
+  // Looks up the title and channel for a link someone pasted (uses the cheaper videos endpoint).
+  function describe(s, id) {
+    if (!HAS_KEY) return Promise.resolve();
+    return api('videos', { part: 'snippet', id: id }).then(function (body) {
+      var item = body.items && body.items[0];
+      if (item) { s.videoTitle = decode(item.snippet.title); s.channel = decode(item.snippet.channelTitle); }
+    }).catch(function () {});
+  }
+
+  function status(s) {
+    if (s.added) return 'added';
+    if (!s.url) return 'needs';
+    return s.auto ? 'check' : 'linked';
+  }
+  var LABEL = { needs: 'Needs link', check: 'Check match', linked: 'Ready for Tithely', added: 'Added to Tithely' };
+
+  function setBusy(b, text) {
+    busy = b;
+    findAllBtn.disabled = b || !HAS_KEY;
+    progressEl.hidden = !text; progressEl.textContent = text || '';
+    listEl.querySelectorAll('button.find-one').forEach(function (btn) { btn.disabled = b || !HAS_KEY; });
+  }
 
   function render() {
     listEl.textContent = '';
@@ -231,58 +310,109 @@ pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px sol
 
       var chip = document.createElement('span'); chip.className = 'chip'; chip.textContent = LABEL[st];
 
+      // Found video: title, channel, and a link to watch it
+      var match = document.createElement('div'); match.className = 'match';
+      if (s.url) {
+        if (s.videoTitle) {
+          var vt = document.createElement('span'); vt.className = 'vt'; vt.textContent = s.videoTitle;
+          var vc = document.createElement('span'); vc.className = 'vc'; vc.textContent = s.channel;
+          match.append(vt, vc);
+        }
+        var watch = document.createElement('a'); watch.href = s.url; watch.target = '_blank'; watch.rel = 'noopener'; watch.textContent = 'Watch ↗';
+        match.appendChild(watch);
+      } else match.hidden = true;
+
       var work = document.createElement('div'); work.className = 'work';
+      var find = document.createElement('button'); find.type = 'button'; find.className = 'find-one';
+      find.textContent = s.url ? 'Find again' : 'Find link'; find.disabled = busy || !HAS_KEY;
+      if (!HAS_KEY) find.hidden = true;
       var search = document.createElement('a'); search.className = 'btn'; search.href = searchUrl(s); search.target = '_blank'; search.rel = 'noopener';
       search.textContent = 'Search YouTube ↗';
       var input = document.createElement('input'); input.type = 'url'; input.id = 'url-' + s.id;
-      input.placeholder = 'Paste the video link here'; input.value = s.url || '';
+      input.placeholder = 'Or paste a video link'; input.value = s.url || '';
       input.setAttribute('aria-label', 'YouTube link for ' + s.title);
+      var confirmBtn = document.createElement('button'); confirmBtn.type = 'button'; confirmBtn.className = 'primary'; confirmBtn.textContent = 'Looks right';
+      confirmBtn.hidden = st !== 'check';
       var copy = document.createElement('button'); copy.type = 'button'; copy.textContent = 'Copy link'; copy.disabled = !s.url;
       var addedLbl = document.createElement('label'); addedLbl.className = 'added-toggle';
-      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'added-' + s.id; cb.checked = !!s.added; cb.disabled = !s.url;
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.id = 'added-' + s.id; cb.checked = !!s.added; cb.disabled = !s.url || st === 'check';
       addedLbl.append(cb, document.createTextNode('Added in Tithely'));
       var del = document.createElement('button'); del.type = 'button'; del.className = 'ghost'; del.textContent = 'Remove';
       del.setAttribute('aria-label', 'Remove ' + s.title);
-      work.append(search, input, copy, addedLbl, del);
+      work.append(find, search, input, confirmBtn, copy, addedLbl, del);
 
-      var msg = document.createElement('div'); msg.className = 'msg';
-      if (s.url) { msg.classList.add('good'); msg.textContent = s.url; } else msg.hidden = true;
+      var msg = document.createElement('div'); msg.className = 'msg bad';
+      if (s.notFound && !s.url) msg.textContent = 'No video found. Try "Search YouTube" with different words.';
+      else msg.hidden = true;
 
+      find.addEventListener('click', function () {
+        setBusy(true, 'Searching for ' + s.title + '…');
+        findOne(s).then(function () { save(); setBusy(false); render(); }, function (err) {
+          setBusy(false); render(); toast(explain(err));
+        });
+      });
       input.addEventListener('change', function () {
         var v = input.value.trim();
-        if (!v) { s.url = ''; s.added = false; save(); render(); return; }
+        if (!v) { Object.assign(s, { url: '', videoTitle: '', channel: '', auto: false, added: false }); save(); render(); return; }
         var id = videoId(v);
         if (!id) {
-          msg.hidden = false; msg.className = 'msg bad';
+          msg.hidden = false;
           msg.textContent = "That doesn't look like a YouTube video link. Copy the address of the video page (it contains watch?v= or youtu.be/).";
           return;
         }
-        s.url = canonical(id); save(); render();
+        Object.assign(s, { url: canonical(id), videoTitle: '', channel: '', auto: false, added: false, notFound: false });
+        save(); render();
+        describe(s, id).then(function () { save(); render(); });
         toast('Link saved for ' + s.title);
       });
+      confirmBtn.addEventListener('click', function () { s.auto = false; save(); render(); });
       copy.addEventListener('click', function () { copyText(s.url, 'Link copied. Paste it into the song in Tithely.'); });
       cb.addEventListener('change', function () { s.added = cb.checked; save(); render(); });
       del.addEventListener('click', function () { songs = songs.filter(function (x) { return x !== s; }); save(); render(); });
 
-      card.append(meta, chip, work, msg);
+      card.append(meta, chip, match, work, msg);
       listEl.appendChild(card);
     });
 
-    var n = { needs: 0, linked: 0, added: 0 };
+    var n = { needs: 0, check: 0, linked: 0, added: 0 };
     songs.forEach(function (s) { n[status(s)]++; });
     document.getElementById('counts').innerHTML =
-      '<span><b>' + n.needs + '</b> need a link</span><span><b>' + n.linked + '</b> ready</span><span><b>' + n.added + '</b> added</span>';
+      '<span><b>' + n.needs + '</b> need a link</span><span><b>' + n.check + '</b> to check</span><span><b>' + n.linked + '</b> ready</span><span><b>' + n.added + '</b> added</span>';
     document.getElementById('clear-examples').hidden = !songs.some(function (s) { return s.example; });
+    findAllBtn.disabled = busy || !HAS_KEY || n.needs === 0;
     document.getElementById('export').textContent = csv() || 'Linked songs will appear here.';
   }
+
+  // Finds links one at a time for every song without one; stops early on quota or key errors.
+  findAllBtn.addEventListener('click', function () {
+    var todo = songs.filter(function (s) { return !s.url && !s.added; });
+    if (!todo.length) { toast('Every song already has a link.'); return; }
+    var i = 0, found = 0;
+    (function next() {
+      if (i >= todo.length) {
+        setBusy(false); save(); render();
+        toast('Found ' + found + ' of ' + todo.length + '. Check each match, then click “Looks right.”');
+        return;
+      }
+      var s = todo[i++];
+      setBusy(true, 'Searching ' + i + ' of ' + todo.length + ': ' + s.title + '…');
+      findOne(s).then(function () {
+        if (s.url) found++;
+        save(); render(); setBusy(true, progressEl.textContent);
+        setTimeout(next, 250);
+      }, function (err) {
+        setBusy(false); save(); render(); toast(explain(err));
+      });
+    })();
+  });
 
   function linked() { return songs.filter(function (s) { return s.url; }); }
   function q(v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }
   function csv() {
     var rows = linked();
     if (!rows.length) return '';
-    return ['Title,Artist,YouTube Link,Added to Tithely'].concat(rows.map(function (s) {
-      return [q(s.title), q(s.artist), s.url, s.added ? 'Yes' : 'No'].join(',');
+    return ['Title,Artist,YouTube Link,Video Title,Channel,Added to Tithely'].concat(rows.map(function (s) {
+      return [q(s.title), q(s.artist), s.url, q(s.videoTitle), q(s.channel), s.added ? 'Yes' : 'No'].join(',');
     })).join('\n');
   }
   function plain() { return linked().map(function (s) { return s.title + (s.artist ? ' (' + s.artist + ')' : '') + ': ' + s.url; }).join('\n'); }
@@ -290,15 +420,15 @@ pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px sol
   var toastTimer;
   function toast(text) {
     var el = document.getElementById('toast'); el.textContent = text; el.hidden = false;
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.hidden = true; }, 2600);
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.hidden = true; }, 3500);
   }
-  function copyText(text, ok) {
+  function copyText(text, okMsg) {
     if (!text) { toast('Nothing to copy yet. Add a link first.'); return; }
-    var p = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject();
-    p.then(function () { toast(ok); }, function () {
+    var pr = navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(text) : Promise.reject();
+    pr.then(function () { toast(okMsg); }, function () {
       var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
       var done = false; try { done = document.execCommand('copy'); } catch (e) {}
-      ta.remove(); toast(done ? ok : 'Copy was blocked. Select the text and copy it manually.');
+      ta.remove(); toast(done ? okMsg : 'Copy was blocked. Select the text and copy it manually.');
     });
   }
 
@@ -310,11 +440,11 @@ pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px sol
       var parts = line.split(/\s+[-–—]\s+/);
       var title = parts.shift().trim(), artist = parts.join(' - ').trim();
       if (songs.some(function (s) { return s.title.toLowerCase() === title.toLowerCase() && (s.artist || '').toLowerCase() === artist.toLowerCase(); })) return;
-      songs.push({ id: uid(), title: title, artist: artist, url: '', added: false });
+      songs.push(blank({ title: title, artist: artist }));
       added++;
     });
     box.value = ''; save(); render();
-    toast(added ? 'Added ' + added + (added === 1 ? ' song' : ' songs') : 'No new songs to add');
+    toast(added ? 'Added ' + added + (added === 1 ? ' song' : ' songs') + (HAS_KEY ? '. Click “Find links” to search.' : '') : 'No new songs to add');
   });
   document.getElementById('clear-examples').addEventListener('click', function () {
     songs = songs.filter(function (s) { return !s.example; }); save(); render();

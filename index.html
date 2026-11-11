@@ -118,7 +118,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .match a:hover { text-decoration: underline; }
 .msg { grid-column: 1 / -1; font-size: 13px; }
 .msg.bad { color: var(--err); }
-.added-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 500; cursor: pointer; }
+.added-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); font-weight: 500; cursor: pointer; white-space: nowrap; }
+.song .end { flex: none; display: flex; align-items: center; gap: 14px; white-space: nowrap; }
+.song .end .ghost { padding: 2px 0; font-size: 13px; }
 .empty { text-align: center; color: var(--muted); padding: 28px; border: 1px dashed var(--line); border-radius: 10px; }
 
 pre.export { margin: 0; overflow-x: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 12px; font-family: var(--font-mono); font-size: 12.5px; max-height: 240px; }
@@ -353,7 +355,9 @@ var YT_API_KEY = 'AIzaSyC-uCe1dg_NSCBlutlAiscJV0Cwz4h2JCw';
       addedLbl.append(cb, document.createTextNode('Added in Tithely'));
       var del = document.createElement('button'); del.type = 'button'; del.className = 'ghost'; del.textContent = 'Remove';
       del.setAttribute('aria-label', 'Remove ' + s.title);
-      work.append(find, search, input, confirmBtn, copy, addedLbl, del);
+      var end = document.createElement('div'); end.className = 'end';
+      end.append(addedLbl, del);
+      work.append(find, search, input, confirmBtn, copy, end);
 
       var msg = document.createElement('div'); msg.className = 'msg bad';
       if (s.notFound && !s.url) msg.textContent = 'No video found. Try "Search YouTube" with different words.';
